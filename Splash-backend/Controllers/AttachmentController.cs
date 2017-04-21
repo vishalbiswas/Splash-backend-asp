@@ -8,25 +8,22 @@ using System.Data.SqlClient;
 
 namespace Splash_backend.Controllers
 {
-    [Produces("application/json")]
     [Route("attachment")]
     public class AttachmentController : Controller
     {
         [HttpGet("{attachid}")]
-        public ObjectResult Get(long attachid)
+        public void Get(long attachid)
         {
-            Dictionary<string, object> response = new Dictionary<string, object>();
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
             SqlCommand command = new SqlCommand("SELECT attachments.image, attachments.size FROM attachments WHERE attachments.attachid = " + attachid + ";", con);
             SqlDataReader reader = command.ExecuteReader();
             if (reader.Read())
             {
-                response.Add("image", Convert.ToBase64String((byte[])reader["image"]));
+                Response.Body.Write((byte[])reader["image"], 0, Convert.ToInt32(reader["size"]));
             }
             reader.Dispose();
             con.Close();
-            return new ObjectResult(response);
         }
     }
 }

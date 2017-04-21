@@ -34,7 +34,7 @@ namespace Splash_backend.Controllers
             con.Open();
             SqlCommand command = new SqlCommand("select top " + quantity + " * from threads order by threads.mtime desc;", con);
             SqlDataReader reader = command.ExecuteReader();
-            while(reader.Read())
+            while (reader.Read())
             {
                 Thread thread = new Thread();
                 thread.threadid = (long)reader["threadid"];
@@ -47,7 +47,8 @@ namespace Splash_backend.Controllers
                 if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
                 {
                     thread.attachid = (long)reader["attachid"];
-                } else
+                }
+                else
                 {
                     thread.attachid = -1;
                 }
