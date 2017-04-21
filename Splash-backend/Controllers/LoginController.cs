@@ -57,7 +57,7 @@ namespace Splash_backend.Controllers
                 if (!string.IsNullOrEmpty(reader.GetString(2))) response.Add("fname", reader[2]);
                 if (!string.IsNullOrEmpty(reader.GetString(3))) response.Add("lname", reader[3]);
 
-                response.Add("uid", reader.GetInt32(0));
+                response.Add("uid", reader.GetInt64(0));
                 response.Add("email", reader.GetString(1));
                 if (!reader.IsDBNull(4)) {
                     byte[] rawData = new byte[reader.GetInt64(5)];
