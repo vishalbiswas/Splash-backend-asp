@@ -10,7 +10,7 @@ using System.Data.SqlClient;
 namespace Splash_backend.Controllers
 {
     [Route("[controller]")]
-    public class GetUserController : Controller
+    public class UserController : Controller
     {
         // GET api/values
         [HttpGet("{uid}")]
@@ -18,14 +18,14 @@ namespace Splash_backend.Controllers
         {
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic, users.picsize FROM users WHERE uid = " + uid, con);
+            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic FROM users WHERE uid = " + uid, con);
             SqlDataReader reader = command.ExecuteReader();
             if (reader.HasRows)
             {
                 reader.Read();
                 Dictionary<string, object>  response = new Dictionary<string, object>();
                 response.Add("status", 0);
-                response.Add("user", reader.GetString(0));
+                response.Add("username", reader.GetString(0));
 
                 if (!string.IsNullOrEmpty(reader.GetString(2))) response.Add("fname", reader[2]);
                 if (!string.IsNullOrEmpty(reader.GetString(3))) response.Add("lname", reader[3]);
@@ -34,9 +34,7 @@ namespace Splash_backend.Controllers
                 response.Add("email", reader.GetString(1));
                 if (!reader.IsDBNull(4))
                 {
-                    byte[] rawData = new byte[reader.GetInt64(5)];
-                    reader.GetBytes(0, 0, rawData, 0, rawData.Length);
-                    response.Add("profpic", System.Convert.ToBase64String(rawData));
+                    response.Add("profpic", reader.GetInt64(4));
                 }
                 reader.Dispose();
                 con.Close();

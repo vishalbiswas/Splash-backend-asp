@@ -9,37 +9,52 @@ using System.IO;
 
 namespace Splash_backend
 {
-    [Route("update/{uid}")]
+    [Route("update")]
     public class UpdateController
     {
-        [HttpPost]
-        public ObjectResult Post(long uid, [FromQuery]string fname, [FromQuery]string lname, IFormFile profpic)
+        [HttpPost("{uid}")]
+        public ObjectResult Post(long uid, [FromForm]string fname, [FromForm]string lname, [FromForm]string email, [FromForm]string password, [FromForm]long profpic)
         {
             Dictionary<string, object> response = new Dictionary<string, object>();
-            SqlCommand command;
-            if (profpic != null)
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            SqlCommand command = new SqlCommand();
+            string queryUpperHalf = "UPDATE users SET users.fname=@fname, users.lname=@lname, users.profpic=@profpic";
+            command.Parameters.AddWithValue("fname", fname);
+            command.Parameters.AddWithValue("lname", lname);
+            if (profpic >= 0)
             {
-                command = new SqlCommand("UPDATE users SET users.fname=@fname, users.lname=@lname, users.profpic=@profpic, users.picsize=@picsize WHERE users.uid=@uid");
-                command.Parameters.Add("fname", SqlDbType.VarChar).Value = fname;
-                command.Parameters.Add("lname", SqlDbType.VarChar).Value = lname;
-                command.Parameters.Add("profpic", SqlDbType.Binary).Value = new BinaryReader(profpic.OpenReadStream()).ReadBytes(Convert.ToInt32(profpic.Length));
-                command.Parameters.Add("picsize", SqlDbType.BigInt).Value = profpic.Length;
-                command.Parameters.Add("uid", SqlDbType.BigInt).Value = uid;
+                command.Parameters.AddWithValue("profpic", profpic);
             }
             else
             {
-                command = new SqlCommand("UPDATE users SET users.fname = @fname, users.lname=@lname WHERE users.uid=@uid");
-                command.Parameters.Add("fname", SqlDbType.VarChar).Value = fname;
-                command.Parameters.Add("lname", SqlDbType.VarChar).Value = lname;
-                command.Parameters.Add("uid", SqlDbType.BigInt).Value = uid;
+                command.Parameters.AddWithValue("profpic", DBNull.Value);
             }
-            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
-            con.Open();
+            if (email != null)
+            {
+                queryUpperHalf += ", users.email=@email";
+                command.Parameters.AddWithValue("email", email);
+            }
+            if (password != null)
+            {
+                queryUpperHalf += ", users.password=@password";
+                command.Parameters.AddWithValue("password", password);
+            }
+            command.Parameters.AddWithValue("uid", uid);
+            command.CommandText = queryUpperHalf + " WHERE uid=@uid;";
             command.Connection = con;
+            con.Open();
             if (command.ExecuteNonQuery() == 1)
             {
                 response.Add("status", 0);
                 response.Add("msg", "Update success");
+                response.Add("fname", fname);
+                if (profpic >= 0) {
+                    response.Add("profpic", profpic);
+                }
+                if (email != null)
+                {
+                    response.Add("email", email);
+                }
             }
             else
             {

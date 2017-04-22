@@ -14,7 +14,6 @@ namespace Splash_backend.Controllers
     [Route("[controller]")]
     public class LoginController : Controller
     {
-        // GET: api/Login
         [HttpGet]
         public ObjectResult Get()
         {
@@ -23,8 +22,7 @@ namespace Splash_backend.Controllers
             response.Add("msg", "Request type not supported");
             return new ObjectResult(response);
         }
-
-        // POST: api/Login
+        
         [HttpPost]
         public ObjectResult Post([FromForm]string user, [FromForm]string pass)
         {
@@ -45,7 +43,7 @@ namespace Splash_backend.Controllers
             }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("SELECT users.uid, users.email, users.fname, users.lname, users.profpic, users.picsize FROM users WHERE users.username = '" + user + "' AND users.password = '" + pass + "';", con);
+            SqlCommand command = new SqlCommand("SELECT users.uid, users.email, users.fname, users.lname, users.profpic FROM users WHERE users.username = '" + user + "' AND users.password = '" + pass + "';", con);
             SqlDataReader reader = command.ExecuteReader();
             if (reader.HasRows)
             {
@@ -60,9 +58,7 @@ namespace Splash_backend.Controllers
                 response.Add("uid", reader.GetInt64(0));
                 response.Add("email", reader.GetString(1));
                 if (!reader.IsDBNull(4)) {
-                    byte[] rawData = new byte[reader.GetInt64(5)];
-                    reader.GetBytes(0, 0, rawData, 0, rawData.Length);
-                    response.Add("profpic", System.Convert.ToBase64String(rawData));
+                    response.Add("profpic", reader.GetInt64(4));
                 }
                 reader.Dispose();
                 con.Close();
