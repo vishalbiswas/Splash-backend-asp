@@ -52,8 +52,8 @@ namespace Splash_backend.Controllers
                 response.Add("msg", "Login success");
                 response.Add("user", user);
 
-                if (!string.IsNullOrEmpty(reader.GetString(2))) response.Add("fname", reader[2]);
-                if (!string.IsNullOrEmpty(reader.GetString(3))) response.Add("lname", reader[3]);
+                if (!reader.IsDBNull(2)) response.Add("fname", reader[2]);
+                if (!reader.IsDBNull(3)) response.Add("lname", reader[3]);
 
                 response.Add("uid", reader.GetInt64(0));
                 response.Add("email", reader.GetString(1));

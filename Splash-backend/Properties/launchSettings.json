@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "IIS": {
+    "dotnet": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
