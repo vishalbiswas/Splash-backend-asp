@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using System.Data;
 using System.Data.SqlTypes;
+using Splash_backend.Models;
 
 namespace Splash_backend.Controllers
 {
@@ -14,16 +15,6 @@ namespace Splash_backend.Controllers
     [Route("comments")]
     public class CommentsController : Controller
     {
-        struct Comment
-        {
-			public long commentid;
-            public long threadid;
-            public string content;
-            public long author;
-            public DateTime ctime;
-            public DateTime mtime;
-        }
-
         [HttpGet("{threadid}")]
         public ObjectResult Get(long threadid)
         {
