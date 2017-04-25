@@ -18,7 +18,7 @@ namespace Splash_backend.Controllers
             Dictionary<string, object> response = new Dictionary<string, object>();
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("UPDATE threads SET threads.title=@title, threads.content=@content, threads.topicid=@topicid, threads.attachid=@attachid , threads.mtime=@mtime;", con);
+            SqlCommand command = new SqlCommand("UPDATE threads SET threads.title=@title, threads.content=@content, threads.topicid=@topicid, threads.attachid=@attachid , threads.mtime=@mtime WHERE threads.threadid=@threadid;", con);
             command.Parameters.AddWithValue("title", title);
             command.Parameters.AddWithValue("content", content);
             command.Parameters.AddWithValue("topicid", topicid);
@@ -33,6 +33,7 @@ namespace Splash_backend.Controllers
             // Do this in SQL DB to prevent time difference if located on separate systems
             DateTime mtime = DateTime.Now;
             command.Parameters.AddWithValue("mtime", mtime);
+            command.Parameters.AddWithValue("threadid", threadid);
             if (command.ExecuteNonQuery() == 1)
             {
                 response.Add("status", 0);

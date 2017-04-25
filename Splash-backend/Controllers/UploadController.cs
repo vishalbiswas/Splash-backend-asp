@@ -35,7 +35,6 @@ namespace Splash_backend.Controllers
             }
             reader.Dispose();
             con.Close();
-            Console.Write(new StreamReader(Request.Body).ReadToEnd());
             return new ObjectResult(response);
         }
 
