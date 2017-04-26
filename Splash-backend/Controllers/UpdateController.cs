@@ -48,6 +48,7 @@ namespace Splash_backend
                 response.Add("status", 0);
                 response.Add("msg", "Update success");
                 response.Add("fname", fname);
+                response.Add("lname", lname);
                 if (profpic >= 0) {
                     response.Add("profpic", profpic);
                 }
