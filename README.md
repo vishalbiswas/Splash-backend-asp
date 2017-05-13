@@ -1,8 +1,8 @@
 # Splash
 This repository hosts the backend ASP.NET webservices required to run a
 private forum server. This backend is meant to be used in conjunction
-with two other projects: (Splash Android Frontend)[https://www.github.com/vishalbiswas/splash]
-and (Splash backend database)[https://www.github.com/vishalbiswas/splash-backend-database]
+with two other projects: [Splash Android Frontend](https://www.github.com/vishalbiswas/splash)
+and [Splash backend database](https://www.github.com/vishalbiswas/splash-backend-database)
 
 This repository should be the last of the three steps to set it up.
 
