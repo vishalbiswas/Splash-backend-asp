@@ -27,8 +27,8 @@ namespace Splash_backend.Controllers
                 response.Add("status", 0);
                 response.Add("username", reader.GetString(0));
 
-                if (!string.IsNullOrEmpty(reader.GetString(2))) response.Add("fname", reader[2]);
-                if (!string.IsNullOrEmpty(reader.GetString(3))) response.Add("lname", reader[3]);
+                if (!reader.IsDBNull(2)) response.Add("fname", reader[2]);
+                if (!reader.IsDBNull(3)) response.Add("lname", reader[3]);
 
                 response.Add("uid", uid);
                 response.Add("email", reader.GetString(1));
