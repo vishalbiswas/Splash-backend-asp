@@ -11,8 +11,8 @@ namespace Splash_backend.Models
         public string title;
         public string content;
         public long author;
-        public DateTime ctime;
-        public DateTime mtime;
+        public long ctime;
+        public long mtime;
         public int topicid;
         public long attachid;
     }

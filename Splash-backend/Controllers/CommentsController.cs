@@ -31,8 +31,8 @@ namespace Splash_backend.Controllers
                 comment.threadid = (long)reader["threadid"];
                 comment.content = (string)reader["content"];
                 comment.author = (long)reader["creator_id"];
-                comment.ctime = (DateTime)reader["ctime"];
-                comment.mtime = (DateTime)reader["mtime"];
+                comment.ctime = Program.toUnixTimestamp((DateTime)reader["ctime"]);
+                comment.mtime = Program.toUnixTimestamp((DateTime)reader["mtime"]);
                 response.Add(comment);
             }
             reader.Dispose();

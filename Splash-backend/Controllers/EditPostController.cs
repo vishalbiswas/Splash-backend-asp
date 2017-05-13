@@ -31,7 +31,7 @@ namespace Splash_backend.Controllers
                 command.Parameters.AddWithValue("attachid", attachid);
             }
             // Do this in SQL DB to prevent time difference if located on separate systems
-            DateTime mtime = DateTime.Now;
+            DateTime mtime = DateTime.UtcNow;
             command.Parameters.AddWithValue("mtime", mtime);
             command.Parameters.AddWithValue("threadid", threadid);
             if (command.ExecuteNonQuery() == 1)

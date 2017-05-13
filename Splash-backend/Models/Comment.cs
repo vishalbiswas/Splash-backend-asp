@@ -11,7 +11,7 @@ namespace Splash_backend.Models
         public long threadid;
         public string content;
         public long author;
-        public DateTime ctime;
-        public DateTime mtime;
+        public long ctime;
+        public long mtime;
     }
 }
