@@ -38,8 +38,8 @@ namespace Splash_backend.Controllers
                 reader.Read();
                 response.Add("status", 0);
                 response.Add("threadid", reader.GetInt64(0));
-                response.Add("ctime", reader.GetDateTime(1));
-                response.Add("mtime", reader.GetDateTime(2));
+                response.Add("ctime", Program.toUnixTimestamp(reader.GetDateTime(1)));
+                response.Add("mtime", Program.toUnixTimestamp(reader.GetDateTime(2)));
             }
             reader.Dispose();
             con.Close();
