@@ -15,5 +15,10 @@ namespace Splash_backend.Models
         public long mtime;
         public int topicid;
         public long attachid;
+        public string type;
+        public bool locked;
+        public bool hidden;
+        public bool needmod;
+        public int reported;
     }
 }

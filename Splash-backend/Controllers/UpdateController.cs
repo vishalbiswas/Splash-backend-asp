@@ -6,21 +6,42 @@ using System.Data.SqlClient;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using Splash_backend.Models;
 
 namespace Splash_backend
 {
     [Route("update")]
     public class UpdateController
     {
-        [HttpPost("{uid}")]
-        public ObjectResult Post(long uid, [FromForm]string fname, [FromForm]string lname, [FromForm]string email, [FromForm]string password, [FromForm]long profpic)
+        [HttpPost]
+        public Dictionary<string, object> Post([FromForm]string sessionid, [FromForm]string fname, [FromForm]string lname, [FromForm]string email, [FromForm]string password, [FromForm]long profpic)
         {
             Dictionary<string, object> response = new Dictionary<string, object>();
+            if (!Program.users.TryGetValue(sessionid, out User user))
+            {
+                response.Add("status", 1);
+                response.Add("msg", "Invalid session");
+                return response;
+            }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             SqlCommand command = new SqlCommand();
             string queryUpperHalf = "UPDATE users SET users.fname=@fname, users.lname=@lname, users.profpic=@profpic";
-            command.Parameters.AddWithValue("fname", fname);
-            command.Parameters.AddWithValue("lname", lname);
+            if (fname == null)
+            {
+                command.Parameters.AddWithValue("fname", "");
+            }
+            else
+            {
+                command.Parameters.AddWithValue("fname", fname);
+            }
+            if (lname == null)
+            {
+                command.Parameters.AddWithValue("lname", "");
+            }
+            else
+            {
+                command.Parameters.AddWithValue("lname", lname);
+            }
             if (profpic >= 0)
             {
                 command.Parameters.AddWithValue("profpic", profpic);
@@ -39,7 +60,7 @@ namespace Splash_backend
                 queryUpperHalf += ", users.password=@password";
                 command.Parameters.AddWithValue("password", password);
             }
-            command.Parameters.AddWithValue("uid", uid);
+            command.Parameters.AddWithValue("uid", user.uid);
             command.CommandText = queryUpperHalf + " WHERE uid=@uid;";
             command.Connection = con;
             con.Open();
@@ -62,7 +83,7 @@ namespace Splash_backend
                 response.Add("status", 1);
                 response.Add("msg", "Internal error");
             }
-            return new ObjectResult(response);
+            return response;
         }
     }
 }

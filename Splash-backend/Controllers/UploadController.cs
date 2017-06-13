@@ -18,8 +18,9 @@ namespace Splash_backend.Controllers
         {
             Dictionary<string, object> response = new Dictionary<string, object>();
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
-            SqlCommand command = new SqlCommand("INSERT INTO attachments (image, size) OUTPUT INSERTED.attachid VALUES(@image, @size);", con);
-            command.Parameters.AddWithValue("image", new BinaryReader(attach.OpenReadStream()).ReadBytes(Convert.ToInt32(attach.Length)));
+            SqlCommand command = new SqlCommand("INSERT INTO attachments (type, data, size) OUTPUT INSERTED.attachid VALUES(@type, @data, @size);", con);
+            command.Parameters.AddWithValue("type", attach.ContentType);
+            command.Parameters.AddWithValue("data", new BinaryReader(attach.OpenReadStream()).ReadBytes(Convert.ToInt32(attach.Length)));
             command.Parameters.AddWithValue("size", attach.Length);
             con.Open();
             SqlDataReader reader = command.ExecuteReader();

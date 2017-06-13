@@ -26,13 +26,20 @@ namespace Splash_backend.Controllers
             SqlDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                Comment comment = new Comment();
-                comment.commentid = (long)reader["commentid"];
-                comment.threadid = (long)reader["threadid"];
-                comment.content = (string)reader["content"];
-                comment.author = (long)reader["creator_id"];
-                comment.ctime = Program.toUnixTimestamp((DateTime)reader["ctime"]);
-                comment.mtime = Program.toUnixTimestamp((DateTime)reader["mtime"]);
+                Comment comment = new Comment()
+                {
+                    commentid = (long)reader["commentid"],
+                    threadid = (long)reader["threadid"],
+                    content = (string)reader["content"],
+                    author = (long)reader["creator_id"]
+                };
+                if (!reader.IsDBNull(reader.GetOrdinal("parent"))) comment.parent = (long)reader["parent"];
+                else comment.parent = -1;
+                comment.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
+                comment.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
+                comment.locked = (bool)reader["locked"];
+                comment.hidden = (bool)reader["hidden"];
+                comment.reported = (int)reader["reported"];
                 response.Add(comment);
             }
             reader.Dispose();

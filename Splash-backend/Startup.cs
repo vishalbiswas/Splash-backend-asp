@@ -28,6 +28,7 @@ namespace Splash_backend
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
+            services.AddSession();
             services.AddMvc();
         }
 
@@ -37,6 +38,7 @@ namespace Splash_backend
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
+            app.UseSession();
             app.UseMvc();
         }
     }

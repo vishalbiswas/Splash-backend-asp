@@ -18,7 +18,7 @@ namespace Splash_backend.Controllers
         {
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic FROM users WHERE uid = " + uid, con);
+            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic, users.ismod FROM users WHERE uid = " + uid, con);
             SqlDataReader reader = command.ExecuteReader();
             if (reader.HasRows)
             {
@@ -36,6 +36,7 @@ namespace Splash_backend.Controllers
                 {
                     response.Add("profpic", reader.GetInt64(4));
                 }
+                response.Add("mod", reader.GetInt32(5));
                 reader.Dispose();
                 con.Close();
                 return new ObjectResult(response);

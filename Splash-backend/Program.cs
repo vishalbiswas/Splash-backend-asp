@@ -6,12 +6,18 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Splash_backend.Models;
 
 namespace Splash_backend
 {
     public class Program
     {
         public static IConfigurationRoot Configuration { get; set; }
+
+        public const string COMMENT_TEMP_DDL = "DECLARE @t table (commentid bigint, ctime datetime, mtime datetime, parent bigint default null);";
+
+        public static Dictionary<string, User> users = new Dictionary<string, User>();
+
         public static void Main(string[] args)
         {
             var builder = new ConfigurationBuilder()
@@ -30,7 +36,7 @@ namespace Splash_backend
             host.Run();
         }
 
-        public static long toUnixTimestamp(DateTime dateTime)
+        public static long ToUnixTimestamp(DateTime dateTime)
         {
             return (long)dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
         }

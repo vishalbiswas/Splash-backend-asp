@@ -35,8 +35,8 @@ namespace Splash_backend.Controllers
                 thread.title = (string)reader["title"];
                 thread.content = (string)reader["content"];
                 thread.author = (long)reader["creator_id"];
-                thread.ctime = Program.toUnixTimestamp((DateTime)reader["ctime"]);
-                thread.mtime = Program.toUnixTimestamp((DateTime)reader["mtime"]);
+                thread.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
+                thread.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
                 thread.topicid = (int)reader["topicid"];
                 if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
                 {
