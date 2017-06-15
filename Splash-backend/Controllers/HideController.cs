@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
 using System.Data.SqlClient;
 using Splash_backend.Models;
+using System.Linq;
 
 namespace Splash_backend.Controllers
 {
@@ -24,6 +20,12 @@ namespace Splash_backend.Controllers
                 response.Add("msg", "Invalid session");
                 return response;
             }
+            if (user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are banned from doing this");
+                return response;
+            }
             string cmdText;
 
             switch (type)
@@ -36,6 +38,13 @@ namespace Splash_backend.Controllers
                     break;
                 case "user":
                     cmdText = "UPDATE users SET banned=1 WHERE uid=" + id + ";";
+                    if (Program.sessions.TryGetValue(id, out List<string> userSessions))
+                    {
+                        foreach (string session in userSessions)
+                        {
+                            LoginController.RemoveSession(session);
+                        }
+                    }
                     break;
                 default:
                     response.Add("status", 2);
@@ -74,6 +83,12 @@ namespace Splash_backend.Controllers
             {
                 response.Add("status", 1);
                 response.Add("msg", "Invalid session");
+                return response;
+            }
+            if (user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are banned from doing this");
                 return response;
             }
             string cmdText;

@@ -1,7 +1,4 @@
-using System;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
 using System.Data.SqlClient;
 using System.Collections.Generic;
 
@@ -9,7 +6,7 @@ namespace Splash_backend
 {
 	[Route("topics")]
 	public class TopicController {
-		struct topic {
+		struct Topic {
 			public int topicid;
 			public string name;
 		}
@@ -21,10 +18,10 @@ namespace Splash_backend
             con.Open();
             SqlCommand command = new SqlCommand("SELECT topics.topicid, topics.name FROM topics", con);
             SqlDataReader reader = command.ExecuteReader();
-            List<topic> topics = new List<topic>();
+            List<Topic> topics = new List<Topic>();
 
 			while(reader.Read()) {
-				topics.Add(new topic() { topicid = reader.GetInt32(0), name = reader.GetString(1)});
+				topics.Add(new Topic() { topicid = reader.GetInt32(0), name = reader.GetString(1)});
 			}
 			reader.Dispose();
 			con.Close();

@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using Splash_backend.Models;
@@ -16,20 +12,30 @@ namespace Splash_backend.Controllers
         [HttpPost("{op}")]
         public IActionResult Post(string op, [FromForm]string sessionid, [FromForm]long notifyid)
         {
+            Dictionary<string, object> response = new Dictionary<string, object>();
+            if (!Program.users.TryGetValue(sessionid, out User user))
+            {
+                return new ObjectResult(response);
+            }
+            if (user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are banned from doing this");
+                return new ObjectResult(response);
+            }
             if (op == "all")
             {
-                return GetNotifications(sessionid, false);
+                return GetNotifications(sessionid, false, user.uid);
             }
             else if (op == "unread")
             {
-                return GetNotifications(sessionid, true);
+                return GetNotifications(sessionid, true, user.uid);
             }
             else if (op == "done")
             {
-                Dictionary<string, object> response = new Dictionary<string, object>();
                 SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
                 con.Open();
-                SqlCommand command = new SqlCommand("UPDATE notifications SET done = 1 WHERE id = " + notifyid, con);
+                SqlCommand command = new SqlCommand("UPDATE notifications SET done = 1 WHERE id = " + notifyid + " and uid = " + user.uid, con);
                 if (command.ExecuteNonQuery() != 1)
                 {
                     response.Add("status", 0);
@@ -40,16 +46,12 @@ namespace Splash_backend.Controllers
             else return NotFound();
         }
         
-        private IActionResult GetNotifications(string sessionid, bool unread)
+        private IActionResult GetNotifications(string sessionid, bool unread, long uid)
         {
             List<Notification> response = new List<Notification>();
-            if (!Program.users.TryGetValue(sessionid, out User user))
-            {
-                return null;
-            }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("SELECT * from notifications WHERE uid = " + user.uid, con);
+            SqlCommand command = new SqlCommand("SELECT * from notifications WHERE uid = " + uid, con);
             if (unread)
             {
                 command.CommandText += " AND done = 0;";

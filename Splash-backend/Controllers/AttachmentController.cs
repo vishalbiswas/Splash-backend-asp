@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
+using System.IO;
+using Splash_backend.Models;
 
 namespace Splash_backend.Controllers
 {
@@ -35,6 +35,50 @@ namespace Splash_backend.Controllers
             }
             reader.Dispose();
             con.Close();
+        }
+    }
+
+    [Produces("application/json")]
+    [Route("upload")]
+    public class UploadController : Controller
+    {
+        [HttpPost]
+        public Dictionary<string, object> Post(IFormFile attach, [FromForm]string sessionid)
+        {
+            Dictionary<string, object> response = new Dictionary<string, object>();
+            if (!Program.users.TryGetValue(sessionid, out User user))
+            {
+                response.Add("status", 1);
+                response.Add("msg", "Invalid session");
+                return response;
+            }
+            if (user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are banned from doing this");
+                return response;
+            }
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            SqlCommand command = new SqlCommand("INSERT INTO attachments (type, data, size, filename) OUTPUT INSERTED.attachid VALUES(@type, @data, @size, @filename);", con);
+            command.Parameters.AddWithValue("type", attach.ContentType);
+            command.Parameters.AddWithValue("data", new BinaryReader(attach.OpenReadStream()).ReadBytes(Convert.ToInt32(attach.Length)));
+            command.Parameters.AddWithValue("size", attach.Length);
+            command.Parameters.AddWithValue("filename", attach.FileName);
+            con.Open();
+            SqlDataReader reader = command.ExecuteReader();
+
+            if (reader.Read())
+            {
+                response.Add("status", 0);
+                response.Add("attachid", (long)reader["attachid"]);
+            }
+            else
+            {
+                response.Add("status", 2);
+            }
+            reader.Dispose();
+            con.Close();
+            return response;
         }
     }
 }

@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
-using System.Data;
 using System.Data.SqlClient;
 
 namespace Splash_backend.Controllers
 {
-    [Route("[controller]")]
+    [Route("user")]
     public class UserController : Controller
     {
-        // GET api/values
         [HttpGet("{uid}")]
         public IActionResult Get(long uid)
         {
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic, users.ismod FROM users WHERE uid = " + uid, con);
+            SqlCommand command = new SqlCommand("SELECT users.username, users.email, users.fname, users.lname, users.profpic, users.ismod, users.banned, users.canpost, users.cancomment FROM users WHERE uid = " + uid, con);
             SqlDataReader reader = command.ExecuteReader();
             if (reader.HasRows)
             {
@@ -37,6 +31,9 @@ namespace Splash_backend.Controllers
                     response.Add("profpic", reader.GetInt64(4));
                 }
                 response.Add("mod", reader.GetInt32(5));
+                response.Add("banned", reader["banned"]);
+                response.Add("canpost", reader["canpost"]);
+                response.Add("cancomment", reader["cancomment"]);
                 reader.Dispose();
                 con.Close();
                 return new ObjectResult(response);

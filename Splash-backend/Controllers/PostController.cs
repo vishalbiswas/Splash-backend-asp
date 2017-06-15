@@ -1,11 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
-using System.Data;
 using Splash_backend.Models;
 
 namespace Splash_backend.Controllers
@@ -22,6 +18,12 @@ namespace Splash_backend.Controllers
             {
                 response.Add("status", 1);
                 response.Add("msg", "Invalid session");
+                return response;
+            }
+            if (!user.canpost || user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are not allowed to create threads");
                 return response;
             }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
@@ -49,6 +51,55 @@ namespace Splash_backend.Controllers
                 response.Add("mtime", Program.ToUnixTimestamp(reader.GetDateTime(2)));
             }
             reader.Dispose();
+            con.Close();
+            return response;
+        }
+    }
+
+    [Produces("application/json")]
+    [Route("editpost")]
+    public class EditPostController : Controller
+    {
+        [HttpPost("{threadid}")]
+        public Dictionary<string, object> Post(int threadid, [FromForm]string title, [FromForm]string content, [FromForm]int topicid, [FromForm]long attachid, [FromForm]string sessionid)
+        {
+            Dictionary<string, object> response = new Dictionary<string, object>();
+            if (!Program.users.TryGetValue(sessionid, out User user))
+            {
+                response.Add("status", 1);
+                response.Add("msg", "Invalid session");
+                return response;
+            }
+            if (!user.canpost || user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are not allowed to edit threads");
+                return response;
+            }
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            con.Open();
+            SqlCommand command = new SqlCommand("UPDATE threads SET threads.title=@title, threads.content=@content, threads.topicid=@topicid, threads.attachid=@attachid , threads.mtime=@mtime WHERE threads.threadid=@threadid and threads.creator_id = @uid;", con);
+            command.Parameters.AddWithValue("title", title);
+            command.Parameters.AddWithValue("content", content);
+            command.Parameters.AddWithValue("topicid", topicid);
+            command.Parameters.AddWithValue("uid", user.uid);
+            if (attachid == 0)
+            {
+                command.Parameters.AddWithValue("attachid", DBNull.Value);
+            }
+            else
+            {
+                command.Parameters.AddWithValue("attachid", attachid);
+            }
+            // Do this in SQL DB to prevent time difference if located on separate systems
+            DateTime mtime = DateTime.UtcNow;
+            command.Parameters.AddWithValue("mtime", mtime);
+            command.Parameters.AddWithValue("threadid", threadid);
+            if (command.ExecuteNonQuery() == 1)
+            {
+                response.Add("status", 0);
+                response.Add("mtime", mtime);
+            }
             con.Close();
             return response;
         }

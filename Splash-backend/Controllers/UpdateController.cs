@@ -1,11 +1,7 @@
 using System;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
 using System.Data.SqlClient;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 using Splash_backend.Models;
 
 namespace Splash_backend
@@ -21,6 +17,12 @@ namespace Splash_backend
             {
                 response.Add("status", 1);
                 response.Add("msg", "Invalid session");
+                return response;
+            }
+            if (user.banned)
+            {
+                response.Add("status", 4);
+                response.Add("msg", "You are banned from doing this");
                 return response;
             }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);

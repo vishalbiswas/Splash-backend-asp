@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Splash_backend.Models
+﻿namespace Splash_backend.Models
 {
     struct Comment
     {

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +15,7 @@ namespace Splash_backend
         public const string COMMENT_TEMP_DDL = "DECLARE @t table (commentid bigint, ctime datetime, mtime datetime, parent bigint default null);";
 
         public static Dictionary<string, User> users = new Dictionary<string, User>();
+        public static Dictionary<long, List<string>> sessions = new Dictionary<long, List<string>>();
 
         public static void Main(string[] args)
         {
@@ -39,6 +38,11 @@ namespace Splash_backend
         public static long ToUnixTimestamp(DateTime dateTime)
         {
             return (long)dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
+        }
+
+        public static DateTime FromJavaTimestamp(long timeStamp)
+        {
+            return new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(timeStamp).ToLocalTime();
         }
     }
 }

@@ -1,8 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Data.SqlClient;
@@ -28,12 +24,12 @@ namespace Splash_backend.Controllers
             pass = pass.Trim();
 
             CheckController checker = new CheckController();
-            if (user.Length == 0 || !checker.check(user))
+            if (user.Length == 0 || !checker.Check(user))
             {
                 response.Add("status", 2);
                 return new ObjectResult(response);
             }
-            if (email.Length == 0 || !(new EmailAddressAttribute().IsValid(email)) || !checker.check(email))
+            if (email.Length == 0 || !(new EmailAddressAttribute().IsValid(email)) || !checker.Check(email))
             {
                 response.Add("status", 3);
                 return new ObjectResult(response);
@@ -64,6 +60,44 @@ namespace Splash_backend.Controllers
             con.Close();
 
             return new ObjectResult(response);
+        }
+    }
+
+    [Produces("application/json")]
+    [Route("check")]
+    public class CheckController : Controller
+    {
+        [HttpGet("{data}")]
+        public ObjectResult Get(string data)
+        {
+            Dictionary<string, object> response = new Dictionary<string, object>();
+            response.Add("available", Check(data));
+            return new ObjectResult(response);
+        }
+
+        public bool Check(string data)
+        {
+            bool result;
+
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            SqlCommand command = new SqlCommand();
+            if (data.Contains("@"))
+            {
+                command.CommandText = "SELECT users.uid FROM users WHERE users.email = @data";
+            }
+            else
+            {
+                command.CommandText = "SELECT users.uid FROM users WHERE users.username = @data";
+            }
+            command.Parameters.AddWithValue("data", data);
+            command.Connection = con;
+            con.Open();
+            SqlDataReader reader = command.ExecuteReader();
+            result = !reader.HasRows;
+            reader.Dispose();
+            con.Close();
+
+            return result;
         }
     }
 }
