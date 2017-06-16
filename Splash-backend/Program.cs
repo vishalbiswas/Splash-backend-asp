@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Splash_backend.Models;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Splash_backend
 {
@@ -23,18 +24,26 @@ namespace Splash_backend
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json");
             Configuration = builder.Build();
+
+            X509Certificate2 certificate = new X509Certificate2("certificate.pfx", Configuration["certificatePassword"]);
+
             var host = new WebHostBuilder()
-                .UseKestrel()
+                /* Delegate equivalent
+                 * delegate(Microsoft.AspNetCore.Server.Kestrel.KestrelServerOptions options) {
+                 *     options.UseHttps(certificate);
+                 * }
+                 */
+                .UseKestrel(options => { options.UseHttps(certificate); })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseStartup<Startup>()
                 .UseApplicationInsights()
-                .UseUrls("http://0.0.0.0:5000")
+                .UseUrls("https://0.0.0.0:5000")
                 .Build();
 
             host.Run();
         }
-
+        
         public static long ToUnixTimestamp(DateTime dateTime)
         {
             return (long)dateTime.ToUniversalTime().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;

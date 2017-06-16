@@ -106,17 +106,19 @@ namespace Splash_backend.Controllers
         {
             List<Comment> response = new List<Comment>();
             Dictionary<string, object> error = new Dictionary<string, object>();
-            if (sessionid != null || !Program.users.TryGetValue(sessionid, out User user))
+            int mod = 0;
+            if (sessionid != null)
             {
-                error.Add("status", 1);
-                error.Add("msg", "Invalid session");
-                return new ObjectResult(error);
-            }
-            if (user.banned)
-            {
-                error.Add("status", 4);
-                error.Add("msg", "You are banned from doing this");
-                return new ObjectResult(error);
+                if (!Program.users.TryGetValue(sessionid, out User user))
+                {
+                    error.Add("status", 1);
+                    error.Add("msg", "Invalid session");
+                    return new ObjectResult(error);
+                }
+                else
+                {
+                    mod = user.mod;
+                }
             }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
@@ -139,7 +141,7 @@ namespace Splash_backend.Controllers
                 comment.locked = (bool)reader["locked"];
                 comment.hidden = (bool)reader["hidden"];
                 comment.reported = (int)reader["reported"];
-                if (!comment.hidden || user.mod > 0)
+                if (!comment.hidden || (sessionid != null && mod > 0))
                 {
                     response.Add(comment);
                 }

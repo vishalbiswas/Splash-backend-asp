@@ -261,3 +261,5 @@ __pycache__/
 *.pyc
 Splash-backend/appsettings.json
 .vscode
+certificate.pfx
+/Splash-backend/Certificates

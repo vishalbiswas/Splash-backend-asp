@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using Splash_backend.Models;
-using System.Linq;
 
 namespace Splash_backend.Controllers
 {
@@ -40,9 +39,10 @@ namespace Splash_backend.Controllers
                     cmdText = "UPDATE users SET banned=1 WHERE uid=" + id + ";";
                     if (Program.sessions.TryGetValue(id, out List<string> userSessions))
                     {
+                        LogoutController controller = new LogoutController();
                         foreach (string session in userSessions)
                         {
-                            LoginController.RemoveSession(session);
+                            controller.Post(session);
                         }
                     }
                     break;
