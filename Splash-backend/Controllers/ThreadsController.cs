@@ -56,7 +56,7 @@ namespace Splash_backend.Controllers
             {
                 command.Parameters.AddWithValue("after", Program.FromJavaTimestamp(Convert.ToInt64(after)));
             }
-            response = ThreadController.GetThreadsFromReader(command.ExecuteReader(), sessionid, quantity);
+            response = ThreadController.GetThreadsFromReader(command.ExecuteReader(), sessionid, quantity, sessionid != null);
             con.Close();
             return new ObjectResult(response);
         }
@@ -114,7 +114,7 @@ namespace Splash_backend.Controllers
             return result;
         }
 
-        internal static List<Thread> GetThreadsFromReader(SqlDataReader reader, string sessionid, int quantity)
+        internal static List<Thread> GetThreadsFromReader(SqlDataReader reader, string sessionid, int quantity, bool needmod)
         {
             List<Thread> response = new List<Thread>();
             while (reader.Read())
@@ -122,7 +122,7 @@ namespace Splash_backend.Controllers
                 Thread thread = GetSingleThreadFromReader(reader, sessionid);
                 if (sessionid != null)
                 {
-                    if (thread.needmod)
+                    if (!needmod || (needmod && thread.needmod))
                     {
                         response.Add(thread);
                     }
@@ -197,8 +197,8 @@ namespace Splash_backend.Controllers
     [Route("search")]
     public class SearchController : Controller
     {
-        [HttpGet("{query}")]
-        public List<Thread> Post(string query, string sessionid, int quantity)
+        [HttpPost("{query}")]
+        public List<Thread> Post(string query, [FromForm]string sessionid, [FromForm]int quantity)
         {
             List<Thread> response = new List<Thread>();
             if (query == null)
@@ -218,7 +218,7 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand(cmdText, con);
             command.Parameters.AddWithValue("query", query);
             SqlDataReader reader = command.ExecuteReader();
-            response = ThreadController.GetThreadsFromReader(reader, sessionid, -1);
+            response = ThreadController.GetThreadsFromReader(reader, sessionid, quantity, false);
             reader.Dispose();
             con.Close();
             return response;
