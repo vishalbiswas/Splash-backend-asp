@@ -166,7 +166,7 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand("UPDATE sessions SET etime='" + DateTime.Now + "' WHERE sessionid='" + sessionid + "';", con);
             Program.users.Remove(sessionid);
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
                 response.Add("status", 0);
             }

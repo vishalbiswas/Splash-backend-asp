@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Data.SqlClient;
+using System.Text.RegularExpressions;
 
 namespace Splash_backend.Controllers
 {
@@ -9,6 +10,8 @@ namespace Splash_backend.Controllers
     [Route("register")]
     public class RegisterController : Controller
     {
+        private static Regex userRegex = new Regex("[^a-z0-9]", RegexOptions.IgnoreCase);
+
         [HttpPost]
         public ObjectResult Post([FromForm]string user, [FromForm]string email, [FromForm]string pass)
         {
@@ -24,7 +27,7 @@ namespace Splash_backend.Controllers
             pass = pass.Trim();
 
             CheckController checker = new CheckController();
-            if (user.Length == 0 || !checker.Check(user))
+            if (user.Length == 0 || userRegex.IsMatch(user) || !checker.Check(user))
             {
                 response.Add("status", 2);
                 return new ObjectResult(response);
@@ -48,7 +51,7 @@ namespace Splash_backend.Controllers
 
             con.Open();
 
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
                 response.Add("status", 0);
             }

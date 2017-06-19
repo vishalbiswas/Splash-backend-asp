@@ -32,6 +32,12 @@ namespace Splash_backend.Controllers
             SqlDataReader reader;
             if (operation == "edit" || operation == "reply")
             {
+                if (IsLocked(commentid))
+                {
+                    response.Add("status", 5);
+                    response.Add("msg", "This comment is locked from further modifications");
+                    return response;
+                }
                 command = new SqlCommand("SELECT creator_id, threadid FROM comments WHERE commentid = " + commentid, con);
                 reader = command.ExecuteReader();
                 if (reader.Read())
@@ -77,6 +83,12 @@ namespace Splash_backend.Controllers
             }
             else
             {
+                if (ThreadController.IsLocked(threadid))
+                {
+                    response.Add("status", 5);
+                    response.Add("msg", "This thread is locked from further modifications");
+                    return response;
+                }
                 command = new SqlCommand(Program.COMMENT_TEMP_DDL + "INSERT INTO comments (threadid, content, creator_id) OUTPUT INSERTED.commentid, INSERTED.ctime, INSERTED.mtime, INSERTED.parent INTO @t VALUES (@threadid, @content, @creator_id); SELECT * FROM @t;", con);
                 command.Parameters.AddWithValue("threadid", threadid);
                 command.Parameters.AddWithValue("creator_id", user.uid);
@@ -95,6 +107,26 @@ namespace Splash_backend.Controllers
             con.Close();
             return response;
         }
+
+        internal static bool IsLocked(long commentid)
+        {
+            bool result = true;
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            con.Open();
+            SqlCommand command = new SqlCommand("SELECT comments.locked, comments.threadid FROM comments WHERE commentid = " + commentid, con);
+            SqlDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                result = reader.GetBoolean(0);
+            }
+            if (!result)
+            {
+                result = ThreadController.IsLocked(reader.GetInt64(1));
+            }
+            reader.Dispose();
+            con.Close();
+            return result;
+        }
     }
 
     [Produces("application/json")]
@@ -102,7 +134,13 @@ namespace Splash_backend.Controllers
     public class CommentsController : Controller
     {
         [HttpGet("{threadid}")]
-        public ObjectResult Get(long threadid, [FromForm]string sessionid)
+        public ObjectResult Get(long threadid)
+        {
+            return Post(threadid, null);
+        }
+
+        [HttpPost("{threadid}")]
+        public ObjectResult Post(long threadid, [FromForm]string sessionid)
         {
             List<Comment> response = new List<Comment>();
             Dictionary<string, object> error = new Dictionary<string, object>();

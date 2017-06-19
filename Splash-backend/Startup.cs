@@ -42,7 +42,7 @@ namespace Splash_backend
             loggerFactory.AddDebug();
 
             var options = new RewriteOptions()
-                .AddRedirectToHttps(301, 5000);
+                .AddRedirectToHttps(302, 5000);
 
             app.UseRewriter(options);
 

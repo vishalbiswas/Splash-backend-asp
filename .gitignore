@@ -263,3 +263,4 @@ Splash-backend/appsettings.json
 .vscode
 certificate.pfx
 /Splash-backend/Certificates
+/Splash-backend/Properties/PublishProfiles

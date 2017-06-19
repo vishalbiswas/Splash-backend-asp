@@ -9,8 +9,8 @@ namespace Splash_backend.Controllers
     [Route("notifications")]
     public class NotificationsController : Controller
     {
-        [HttpPost("{op}")]
-        public IActionResult Post(string op, [FromForm]string sessionid, [FromForm]long notifyid)
+        [HttpPost("{operation}")]
+        public IActionResult Post(string operation, [FromForm]string sessionid, [FromForm]long notifyid)
         {
             Dictionary<string, object> response = new Dictionary<string, object>();
             if (!Program.users.TryGetValue(sessionid, out User user))
@@ -23,20 +23,20 @@ namespace Splash_backend.Controllers
                 response.Add("msg", "You are banned from doing this");
                 return new ObjectResult(response);
             }
-            if (op == "all")
+            if (operation == "all")
             {
                 return GetNotifications(sessionid, false, user.uid);
             }
-            else if (op == "unread")
+            else if (operation == "unread")
             {
                 return GetNotifications(sessionid, true, user.uid);
             }
-            else if (op == "done")
+            else if (operation == "done")
             {
                 SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
                 con.Open();
                 SqlCommand command = new SqlCommand("UPDATE notifications SET done = 1 WHERE id = " + notifyid + " and uid = " + user.uid, con);
-                if (command.ExecuteNonQuery() != 1)
+                if (command.ExecuteNonQuery() > 0)
                 {
                     response.Add("status", 0);
                 }
@@ -46,7 +46,7 @@ namespace Splash_backend.Controllers
             else return NotFound();
         }
         
-        private IActionResult GetNotifications(string sessionid, bool unread, long uid)
+        private static IActionResult GetNotifications(string sessionid, bool unread, long uid)
         {
             List<Notification> response = new List<Notification>();
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);

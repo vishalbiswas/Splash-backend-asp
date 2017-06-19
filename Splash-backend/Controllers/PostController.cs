@@ -26,6 +26,12 @@ namespace Splash_backend.Controllers
                 response.Add("msg", "You are not allowed to create threads");
                 return response;
             }
+            if (TopicController.IsLocked(topicid))
+            {
+                response.Add("status", 5);
+                response.Add("msg", "This topic is locked from further modifications");
+                return response;
+            }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
             SqlCommand command = new SqlCommand("INSERT INTO threads (title, content, creator_id, topicid, attachid) OUTPUT INSERTED.threadid, INSERTED.ctime, INSERTED.mtime VALUES (@title, @content, @creator_id, @topicid, @attachid);", con);
@@ -76,6 +82,12 @@ namespace Splash_backend.Controllers
                 response.Add("msg", "You are not allowed to edit threads");
                 return response;
             }
+            if (ThreadController.IsLocked(threadid))
+            {
+                response.Add("status", 5);
+                response.Add("msg", "This thread is locked from further modifications");
+                return response;
+            }
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
             SqlCommand command = new SqlCommand("UPDATE threads SET threads.title=@title, threads.content=@content, threads.topicid=@topicid, threads.attachid=@attachid , threads.mtime=@mtime WHERE threads.threadid=@threadid and threads.creator_id = @uid;", con);
@@ -95,7 +107,7 @@ namespace Splash_backend.Controllers
             DateTime mtime = DateTime.UtcNow;
             command.Parameters.AddWithValue("mtime", mtime);
             command.Parameters.AddWithValue("threadid", threadid);
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
                 response.Add("status", 0);
                 response.Add("mtime", mtime);

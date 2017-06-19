@@ -36,6 +36,12 @@ namespace Splash_backend.Controllers
                     cmdText = "UPDATE comments SET locked=1 WHERE commentid=" + id + ";";
                     break;
                 case "user":
+                    if (!UserController.CanMod(user.mod, id))
+                    {
+                        response.Add("status", 3);
+                        response.Add("msg", "User is in a higher tier or does not exist");
+                        return response;
+                    }
                     cmdText = "UPDATE users SET canpost=0, cancomment=0 WHERE uid=" + id + ";";
                     break;
                 default:
@@ -47,14 +53,15 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand(cmdText, con);
 
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
+                ReportLogger.LogAction(type, ReportLogger.LOCK, id, user.uid);
                 response.Add("status", 0);
                 response.Add("msg", "Object locked successfully");
             }
             else
             {
-                response.Add("status", 3);
+                response.Add("status", 5);
                 response.Add("msg", "Internal error occured while locking object");
             }
             con.Close();
@@ -94,6 +101,12 @@ namespace Splash_backend.Controllers
                     cmdText = "UPDATE comments SET locked=0 WHERE commentid=" + id + ";";
                     break;
                 case "user":
+                    if (!UserController.CanMod(user.mod, id))
+                    {
+                        response.Add("status", 3);
+                        response.Add("msg", "User is in a higher tier or does not exist");
+                        return response;
+                    }
                     cmdText = "UPDATE users SET canpost=1, cancomment=1 WHERE uid=" + id + ";";
                     break;
                 default:
@@ -105,14 +118,15 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand(cmdText, con);
 
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
+                ReportLogger.LogAction(type, ReportLogger.UNLOCK, id, user.uid);
                 response.Add("status", 0);
                 response.Add("msg", "Object locked successfully");
             }
             else
             {
-                response.Add("status", 3);
+                response.Add("status", 5);
                 response.Add("msg", "Internal error occured while locking object");
             }
             con.Close();

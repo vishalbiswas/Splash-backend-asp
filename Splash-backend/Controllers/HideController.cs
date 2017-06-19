@@ -36,6 +36,12 @@ namespace Splash_backend.Controllers
                     cmdText = "UPDATE comments SET hidden=1 WHERE commentid=" + id + ";";
                     break;
                 case "user":
+                    if (!UserController.CanMod(user.mod, id))
+                    {
+                        response.Add("status", 3);
+                        response.Add("msg", "User is in a higher tier or does not exist");
+                        return response;
+                    }
                     cmdText = "UPDATE users SET banned=1 WHERE uid=" + id + ";";
                     if (Program.sessions.TryGetValue(id, out List<string> userSessions))
                     {
@@ -55,14 +61,15 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand(cmdText, con);
 
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
+                ReportLogger.LogAction(type, ReportLogger.HIDE, id, user.uid);
                 response.Add("status", 0);
                 response.Add("msg", "Action successful");
             }
             else
             {
-                response.Add("status", 3);
+                response.Add("status", 5);
                 response.Add("msg", "Internal error occured");
             }
             con.Close();
@@ -102,6 +109,12 @@ namespace Splash_backend.Controllers
                     cmdText = "UPDATE comments SET hidden=0 WHERE commentid=" + id + ";";
                     break;
                 case "user":
+                    if (!UserController.CanMod(user.mod, id))
+                    {
+                        response.Add("status", 3);
+                        response.Add("msg", "User is in a higher tier or does not exist");
+                        return response;
+                    }
                     cmdText = "UPDATE users SET banned=0 WHERE uid=" + id + ";";
                     break;
                 default:
@@ -113,14 +126,15 @@ namespace Splash_backend.Controllers
             SqlCommand command = new SqlCommand(cmdText, con);
 
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
+                ReportLogger.LogAction(type, ReportLogger.UNHIDE, id, user.uid);
                 response.Add("status", 0);
                 response.Add("msg", "Action successful");
             }
             else
             {
-                response.Add("status", 3);
+                response.Add("status", 5);
                 response.Add("msg", "Internal error occured");
             }
             con.Close();

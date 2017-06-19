@@ -66,7 +66,7 @@ namespace Splash_backend
             command.CommandText = queryUpperHalf + " WHERE uid=@uid;";
             command.Connection = con;
             con.Open();
-            if (command.ExecuteNonQuery() == 1)
+            if (command.ExecuteNonQuery() > 0)
             {
                 response.Add("status", 0);
                 response.Add("msg", "Update success");

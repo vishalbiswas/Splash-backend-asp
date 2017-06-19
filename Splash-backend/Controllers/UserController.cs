@@ -45,5 +45,19 @@ namespace Splash_backend.Controllers
                 return NotFound();
             }
         }
+
+        internal static bool CanMod(int moderator, long toBeModerated)
+        {
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            SqlCommand nestedCommand = new SqlCommand("SELECT ismod FROM users WHERE users.uid = " + toBeModerated, con);
+            con.Open();
+            SqlDataReader reader = nestedCommand.ExecuteReader();
+            if (reader.Read())
+            {
+                return (reader.GetInt32(0) <= moderator);
+            }
+            con.Close();
+            return false;
+        }
     }
 }

@@ -6,8 +6,6 @@ using Splash_backend.Models;
 
 namespace Splash_backend.Controllers
 {
-    
-
     [Produces("application/json")]
     [Route("threads")]
     public class ThreadsController : Controller
@@ -24,7 +22,7 @@ namespace Splash_backend.Controllers
             string cmdText;
             if (sessionid == null)
             {
-                cmdText = "select top " + quantity + " * from threads left join attachments on threads.attachid=attachments.attachid where hidden=0 ";
+                cmdText = "select top " + quantity + ThreadController.columns + "from threads left join attachments on threads.attachid=attachments.attachid where hidden=0 ";
                 if (after != null)
                 {
                     cmdText += "and mtime < @after ";
@@ -33,7 +31,7 @@ namespace Splash_backend.Controllers
             else
             {
                 if (Program.users.TryGetValue(sessionid, out User user) && user.mod > 0) {
-                    cmdText = "select * from threads left join attachments on threads.attachid=attachments.attachid ";
+                    cmdText = "select" + ThreadController.columns + "from threads left join attachments on threads.attachid=attachments.attachid ";
                     if (after != null)
                     {
                         cmdText += "where mtime < @after ";
@@ -58,51 +56,70 @@ namespace Splash_backend.Controllers
             {
                 command.Parameters.AddWithValue("after", Program.FromJavaTimestamp(Convert.ToInt64(after)));
             }
+            response = ThreadController.GetThreadsFromReader(command.ExecuteReader(), sessionid, quantity);
+            con.Close();
+            return new ObjectResult(response);
+        }
+    }
+
+    [Produces("application/json")]
+    [Route("thread")]
+    public class ThreadController : Controller
+    {
+        public const string columns = " threads.*, attachments.type, attachments.filename ";
+
+        [HttpPost("{threadid}")]
+        public IActionResult Post(long threadid, [FromForm]string sessionid)
+        {
+            string cmdText = "select" + columns + "from threads left join attachments on threads.attachid=attachments.attachid where threadid = " + threadid;
+            if (sessionid == null || !(Program.users.TryGetValue(sessionid, out User user) && user.mod > 0))
+            {
+                cmdText += " and hidden=0 ";
+            }
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            con.Open();
+            SqlCommand command = new SqlCommand(cmdText, con);
             SqlDataReader reader = command.ExecuteReader();
+            Thread thread;
+            if (reader.Read())
+            {
+                thread = GetSingleThreadFromReader(reader, sessionid);
+            }
+            else
+            {
+                return NotFound();
+            }
+            reader.Dispose();
+            con.Close();
+            return new ObjectResult(thread);
+        }
+
+        internal static bool IsLocked(long threadid)
+        {
+            bool result = true;
+            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
+            con.Open();
+            SqlCommand command = new SqlCommand("SELECT threads.locked, threads.topicid FROM threads WHERE threadid = " + threadid, con);
+            SqlDataReader reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                result = reader.GetBoolean(0);
+            }
+            if (!result)
+            {
+                result = TopicController.IsLocked(reader.GetInt32(1));
+            }
+            reader.Dispose();
+            con.Close();
+            return result;
+        }
+
+        internal static List<Thread> GetThreadsFromReader(SqlDataReader reader, string sessionid, int quantity)
+        {
+            List<Thread> response = new List<Thread>();
             while (reader.Read())
             {
-                Thread thread = new Thread();
-                thread.threadid = (long)reader["threadid"];
-                thread.title = (string)reader["title"];
-                thread.content = (string)reader["content"];
-                thread.author = (long)reader["creator_id"];
-                thread.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
-                thread.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
-                thread.topicid = (int)reader["topicid"];
-                thread.hidden = (bool)reader["hidden"];
-                thread.locked = (bool)reader["locked"];
-                thread.reported = (int)reader["reported"];
-                if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
-                {
-                    thread.attachid = (long)reader["attachid"];
-                    thread.type = (string)reader["type"];
-                }
-                else
-                {
-                    thread.attachid = -1;
-                    thread.type = null;
-                }
-                if (thread.reported > 0)
-                {
-                    thread.needmod = true;
-                }
-                else if (sessionid != null)
-                {
-                    // only do heavy work if mod is requested
-                    SqlCommand nestedCommand = new SqlCommand("SELECT reported FROM comments WHERE threadid=" + thread.threadid, new SqlConnection(Program.Configuration["connectionStrings:splashConString"]));
-                    nestedCommand.Connection.Open();
-                    SqlDataReader nestedReader = nestedCommand.ExecuteReader();
-                    while(nestedReader.Read())
-                    {
-                        if (nestedReader.GetInt32(0) > 0)
-                        {
-                            thread.needmod = true;
-                            break;
-                        }
-                    }
-                    nestedReader.Dispose();
-                    nestedCommand.Connection.Close();
-                }
+                Thread thread = GetSingleThreadFromReader(reader, sessionid);
                 if (sessionid != null)
                 {
                     if (thread.needmod)
@@ -117,80 +134,62 @@ namespace Splash_backend.Controllers
                 if (sessionid != null && response.Count == quantity) break;
             }
             reader.Dispose();
-            con.Close();
-            return new ObjectResult(response);
+            return response;
         }
-    }
 
-    [Produces("application/json")]
-    [Route("thread")]
-    public class ThreadController : Controller
-    {
-        [HttpPost("{threadid}")]
-        public IActionResult Post(long threadid, [FromForm]string sessionid)
+        internal static Thread GetSingleThreadFromReader(SqlDataReader reader, string sessionid)
         {
-            string cmdText = "select * from threads left join attachments on threads.attachid=attachments.attachid where threadid = " + threadid;
-            if (sessionid == null || !(Program.users.TryGetValue(sessionid, out User user) && user.mod > 0))
+            Thread thread = new Thread();
+            thread.threadid = (long)reader["threadid"];
+            thread.title = (string)reader["title"];
+            thread.content = (string)reader["content"];
+            thread.author = (long)reader["creator_id"];
+            thread.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
+            thread.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
+            thread.topicid = (int)reader["topicid"];
+            thread.hidden = (bool)reader["hidden"];
+            thread.locked = (bool)reader["locked"];
+            thread.reported = (int)reader["reported"];
+            if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
             {
-                cmdText += " and hidden=0 ";
-            }
-            SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
-            con.Open();
-            SqlCommand command = new SqlCommand(cmdText, con);
-            SqlDataReader reader = command.ExecuteReader();
-            Thread thread;
-            if (reader.Read())
-            {
-                thread = new Thread();
-                thread.threadid = (long)reader["threadid"];
-                thread.title = (string)reader["title"];
-                thread.content = (string)reader["content"];
-                thread.author = (long)reader["creator_id"];
-                thread.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
-                thread.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
-                thread.topicid = (int)reader["topicid"];
-                thread.hidden = (bool)reader["hidden"];
-                thread.locked = (bool)reader["locked"];
-                thread.reported = (int)reader["reported"];
-                if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
+                thread.attachid = (long)reader["attachid"];
+                thread.type = (string)reader["type"];
+                if (!reader.IsDBNull(reader.GetOrdinal("filename")))
                 {
-                    thread.attachid = (long)reader["attachid"];
-                    thread.type = (string)reader["type"];
+                    thread.filename = (string)reader["filename"];
                 }
                 else
                 {
-                    thread.attachid = -1;
-                    thread.type = null;
-                }
-                if (thread.reported > 0)
-                {
-                    thread.needmod = true;
-                }
-                else if (sessionid != null)
-                {
-                    // only do heavy work if mod is requested
-                    SqlCommand nestedCommand = new SqlCommand("SELECT reported FROM comments WHERE threadid=" + thread.threadid, new SqlConnection(Program.Configuration["connectionStrings:splashConString"]));
-                    nestedCommand.Connection.Open();
-                    SqlDataReader nestedReader = nestedCommand.ExecuteReader();
-                    while (nestedReader.Read())
-                    {
-                        if (nestedReader.GetInt32(0) > 0)
-                        {
-                            thread.needmod = true;
-                            break;
-                        }
-                    }
-                    nestedReader.Dispose();
-                    nestedCommand.Connection.Close();
+                    thread.filename = thread.threadid.ToString();
                 }
             }
             else
             {
-                return NotFound();
+                thread.attachid = -1;
+                thread.type = null;
             }
-            reader.Dispose();
-            con.Close();
-            return new ObjectResult(thread);
+            if (thread.reported > 0)
+            {
+                thread.needmod = true;
+            }
+            else if (sessionid != null)
+            {
+                // only do heavy work if mod is requested
+                SqlCommand nestedCommand = new SqlCommand("SELECT reported FROM comments WHERE threadid=" + thread.threadid, new SqlConnection(Program.Configuration["connectionStrings:splashConString"]));
+                nestedCommand.Connection.Open();
+                SqlDataReader nestedReader = nestedCommand.ExecuteReader();
+                while (nestedReader.Read())
+                {
+                    if (nestedReader.GetInt32(0) > 0)
+                    {
+                        thread.needmod = true;
+                        break;
+                    }
+                }
+                nestedReader.Dispose();
+                nestedCommand.Connection.Close();
+            }
+            return thread;
         }
     }
 
@@ -199,7 +198,7 @@ namespace Splash_backend.Controllers
     public class SearchController : Controller
     {
         [HttpGet("{query}")]
-        public List<Thread> Get(string query)
+        public List<Thread> Post(string query, string sessionid, int quantity)
         {
             List<Thread> response = new List<Thread>();
             if (query == null)
@@ -210,29 +209,16 @@ namespace Splash_backend.Controllers
             query = String.Format("%{0}%", query);
             SqlConnection con = new SqlConnection(Program.Configuration["connectionStrings:splashConString"]);
             con.Open();
-            SqlCommand command = new SqlCommand("select top 50 * from threads where threads.title like @query or threads.content like @query order by threads.mtime desc;", con);
+            string cmdText = "select top " + quantity + ThreadController.columns + "from threads left join attachments on threads.attachid=attachments.attachid where threads.title like @query or threads.content like @query ";
+            if (sessionid == null || !(Program.users.TryGetValue(sessionid, out User user) && user.mod > 0))
+            {
+                cmdText += " and hidden=0 ";
+            }
+            cmdText += "order by threads.mtime desc;";
+            SqlCommand command = new SqlCommand(cmdText, con);
             command.Parameters.AddWithValue("query", query);
             SqlDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                Thread thread = new Thread();
-                thread.threadid = (long)reader["threadid"];
-                thread.title = (string)reader["title"];
-                thread.content = (string)reader["content"];
-                thread.author = (long)reader["creator_id"];
-                thread.ctime = Program.ToUnixTimestamp((DateTime)reader["ctime"]);
-                thread.mtime = Program.ToUnixTimestamp((DateTime)reader["mtime"]);
-                thread.topicid = (int)reader["topicid"];
-                if (!reader.IsDBNull(reader.GetOrdinal("attachid")))
-                {
-                    thread.attachid = (long)reader["attachid"];
-                }
-                else
-                {
-                    thread.attachid = -1;
-                }
-                response.Add(thread);
-            }
+            response = ThreadController.GetThreadsFromReader(reader, sessionid, -1);
             reader.Dispose();
             con.Close();
             return response;

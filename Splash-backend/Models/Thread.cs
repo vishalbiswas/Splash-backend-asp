@@ -11,6 +11,7 @@
         public int topicid;
         public long attachid;
         public string type;
+        public string filename;
         public bool locked;
         public bool hidden;
         public bool needmod;
